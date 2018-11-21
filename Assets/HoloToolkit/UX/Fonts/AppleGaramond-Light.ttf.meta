@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: b1df2d051b9a80e4885e3755b9fd2a6b
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: Apple Garamond Light
+  fontNames:
+  - Apple Garamond Light
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 201731681076e3f40aacaee64c2a47e1, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
