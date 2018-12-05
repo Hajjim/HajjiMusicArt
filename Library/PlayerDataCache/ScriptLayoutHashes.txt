@@ -1,6 +1,6 @@
 Metro
 PlayerPath?
-C:/Users/Hajji/Desktop/StableV1
+C:/Users/Hajji/Desktop/Nouveau dossier
 SceneListBegin?
 Assets/Scenes/Main.unity
 SceneListEnd?
@@ -200,6 +200,7 @@ cb3299cc3a2d8ae01f30f501bb96d4cf Assembly-CSharp.dll:HoloToolkit.Unity.InputModu
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:HoloToolkit.Unity.AudioSourcesReference
 060048163841f486acb147d2ead9eea2 Assembly-CSharp.dll:HoloToolkit.Unity.InputModule.ButtonController
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:HoloToolkit.Unity.TimerScheduler
+05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:.RotateModel
 86850bb803420472cf9bdf34ef5b7e0f Assembly-CSharp.dll:HoloToolkit.Unity.InputModule.CustomInputSource
 066f3c01e7c10bfbdc9fc130998d1d40 Assembly-CSharp.dll:HoloToolkit.Sharing.Spawning.PrefabSpawnManager
 3653e647f40c0f295672219cc1e7ebff Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.SpriteButton
@@ -208,7 +209,7 @@ c4fd2ef7468c68e11d03e50c6e8b323d Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.A
 a791e7387cb4113e3b29c2bbd8199b96 Assembly-CSharp.dll:HoloToolkit.Unity.UX.DistorterGravity
 af1b899928fa73a7824f1b26518097f6 Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.MeshButton
 44f24521fcafda017d17ab4dbb73c0cc Assembly-CSharp.dll:HoloToolkit.UX.ToolTips.ToolTipConnector
-848356d21c090a634882b12cc2ab8a74 Assembly-CSharp.dll:uOSC.CreateSphere
+25faa312941bebd8147233d3956655cf Assembly-CSharp.dll:uOSC.SphereManager
 8186a0148b55fd4b5cdaa99b9937cf7d Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.ButtonMeshProfile
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:HoloToolkit.Unity.SpatialMapping.SpatialMappingSource
 bffc879e328df7088b4672067d06833b Assembly-CSharp.dll:HoloToolkit.Unity.UX.LineParticles
@@ -308,7 +309,7 @@ d62a422b2910567513bd772ce37cf94e Assembly-CSharp.dll:HoloToolkit.Unity.AudioEven
 3dcfd84d20deaace85b9ca45b0051c46 Assembly-CSharp.dll:HoloToolkit.UX.Dialog.DialogShell
 edd06c164d6a92966b90a7763ab8511a Assembly-CSharp.dll:HoloToolkit.Unity.SolverBodyLock
 de58daf7a7585c93b4a043e238d5431c Assembly-CSharp.dll:HoloToolkit.Unity.UX.Spline
-88427ac6f10b123c457310b7e029222c Assembly-CSharp.dll:.InfoSphere
+26f08cca9af11a3a6f7b94f675589e8c Assembly-CSharp.dll:.InfoSphere
 960588de1ff099aa2d1b4ff55adb229b Assembly-CSharp.dll:HoloToolkit.Unity.InputModule.TriggerButton
 7000360c28a9dd6e5169290e63863ba5 Assembly-CSharp.dll:HoloToolkit.Unity.Receivers.ToggleActiveReceiver
 b33db881aedddc764e35560d6e13fac5 Assembly-CSharp.dll:HoloToolkit.UX.Buttons.DialogButton
@@ -340,3 +341,4 @@ ecc14250990e8ffd4a0bb635da7c50c3 Assembly-CSharp.dll:HoloToolkit.Unity.AtlasPref
 97e0d51968a9f637800faf850b1d95a2 Assembly-CSharp.dll:HoloToolkit.Unity.UX.BoundingBoxRig
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:.LineBaseEditor
 b74d6034034deeffc1401e25ca9027a5 Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.CompoundButton
+134a5e8453b508ac6cfa0f414096b5b7 Assembly-CSharp.dll:.GeneticActivate
