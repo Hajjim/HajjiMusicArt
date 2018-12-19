@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.WSA.Input;
@@ -11,17 +12,25 @@ namespace uOSC
     public class SphereManager : MonoBehaviour
     {
 
-
         //------------------------------------
         // Variables :
         //------------------------------------
 
-        public int inPort = 8000;
+        public int inPort = 9000;
+        public int silence = 4;
         public GameObject SphereMusic;
-        GameObject SphereMusicClone;
-        //Collider lastcollider;
+        private GameObject SphereMusicClone;
         bool onerequest = false;
         bool goGenetic = false;
+        bool anothertime = false;
+        public Vector2 IdValue;
+        List<int> listID;
+        private bool ok = false;
+        private bool ok2 = false;
+        private bool widgetDone = false;
+        private int presetNoCorrect = 1;
+        public InfoSphere scriptvaleur;
+        private int justparent;
 
         public int star;
         public int numOfStars;
@@ -34,7 +43,6 @@ namespace uOSC
         public Image[] starecs;
         public Sprite fullStarec;
         public Sprite emptyStarec;
-        public int silence = 4;
 
         List<GameObject> allsphere;
         private int popini;
@@ -43,8 +51,8 @@ namespace uOSC
         private int nokeep;
 
         private int nbwidg;
-        public int presetnumber = 1;
-        //private int valeur;
+        private int nbwidgclean = 0;
+        public int presetnumber;
         private object valeur;
         private Vector3 decalage;
         private int m = 0;
@@ -107,8 +115,9 @@ namespace uOSC
 
 
         //------------------------------------
-        // Méthodes :
+        // Méthodes principales :
         //------------------------------------
+        //***************************************************************************************************************************//
 
         void Start()
         {
@@ -122,6 +131,7 @@ namespace uOSC
             mycolors.Push(Color.green);
             mycolors.Push(Color.red);
 
+            listID = new List<int>();
             allsphere = new List<GameObject>();
 
             var client = GetComponent<uOscClient>();
@@ -136,27 +146,178 @@ namespace uOSC
             Debug.Log("Demande du nombre de preset...");
 
             //mon preset silence
-            n = silence;
-            StartCoroutine(ChangeMusic());
-
-            //recuperation des widgets  // MAIS SUR UN PRESET ???? JE VEUX TOUT LES PRESET ET LEUR VALUE
-            var bundleWidget = new Bundle(Timestamp.Now);
-            for (int i = 0; i < nbwidg; i++)
-            {
-                bundleWidget.Add(new Message("/osc/widget", i));
-            }
-            client.Send(bundleWidget);
+            //n = silence;µ
+            //se positionne preset 1
+            //n = 1;
+            //StartCoroutine(ChangeMusic());
 
         }
 
+        //***************************************************************************************************************************//
+        void OnDataReceived(Message message)
+        {
 
+            // address---------------------------
+            var msg = message.address + ": ";
 
+            // timestamp------------------------
+            msg += "(" + message.timestamp.ToLocalTime() + ") ";
+
+            // values---------------------------
+            foreach (var value in message.values)
+            {
+                msg += value.GetString() + " ";
+                valeur = value; //revoir optimisation
+            }
+
+            //pour savoir si co-------------------------
+            if (message.address == "/osc/response_from")
+            {
+                Debug.Log(msg + " => Connected to Pacarana");
+            }
+
+            //pour savoir le nb de widget
+            if (message.address == "/osc/notify/vcs/hajji")
+            {
+                nbwidg = (int)valeur;
+                Debug.Log("nombre de widget : " + nbwidg);
+                ok = true;//pour update la liste des preset
+            }
+
+            //pour le nombre de sph------------------------
+            if (message.address == "/osc/notify/presets/hajji" && anothertime == false)
+            {
+                presetnumber = (int)valeur;
+                Debug.Log(msg + " => Nombre : " + valeur);
+                //Je créé le nombre de sphère requis : 
+                //population initial composé de presetnumber chromosomes qui sont composé de nwidget gênes
+                for (int i = 1; i <= presetnumber; i++)
+                {
+                    if (i != silence) //preset silence degagé
+                    {
+                        string objectName = "SpherePreset_" + i;
+                        // float angleIteration = 360 / presetnumber;
+                        // float currentRotation = angleIteration * i;
+                        SphereMusicClone = Instantiate(SphereMusic) as GameObject;
+                        float rx = (Random.Range(0, 2) < 1) ? Random.Range(-0.6f, -0.3f) : Random.Range(0.3f, 0.6f);
+                        float ry = (Random.Range(0, 2) < 1) ? Random.Range(-0.6f, -0.3f) : Random.Range(0.3f, 0.6f);
+                        SphereMusicClone.transform.position = new Vector3(this.transform.position.x + rx, this.transform.position.y + ry, this.transform.position.z + Random.Range(-0.3f, 1f));
+                        // SphereMusicClone.transform.rotation = this.transform.rotation;
+                        // SphereMusicClone.transform.Rotate(new Vector3(0, currentRotation, 0));
+                        SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 3f));
+                        SphereMusicClone.GetComponentInChildren<Renderer>().material.color = changeAlpha(mycolors.Pop(), 0.3f); //9 preset max
+                        SphereMusicClone.name = objectName;
+                        scriptvaleur = SphereMusicClone.GetComponent<InfoSphere>();
+                        scriptvaleur.presetno = i;
+                        allsphere.Add(SphereMusicClone);
+
+                    }
+                }
+                popini = allsphere.Count;
+                childpresetno = popini + 1; //+1 car silence pas compté dans popini
+                anothertime = true;
+            }
+
+            //après bundle que j'ai send avec /osc/widget,i-----------------------------------
+            if (message.address == "/osc/widget") //value[0] = index of widget and value[1] = JSON String
+            {
+                var jsonstring = (string)message.values[1];
+                Rootobject json = JsonConvert.DeserializeObject<Rootobject>(jsonstring);
+                if (json != null && json.label != "Trigger" && json.concreteEventID != 0)
+                {
+                    nbwidgclean = nbwidgclean + 1;
+                    listID.Add(json.concreteEventID); //ajout dans ma liste d'eventID
+                    for (int i = 0; i < allsphere.Count; i++)
+                    {
+                        IdValue.x = json.concreteEventID;
+                        IdValue.y = json.maximum;
+                        allsphere[i].GetComponent<InfoSphere>().widgetValue.Add(IdValue);
+                        //Debug.Log("json " + IdValue.x + " nom : " + json.label);
+                    }
+                }
+                ok2 = true;
+            }
+
+            //ENCODAGE GENETIC----------------------------------------------------------
+            //After switch preset, get /vcs,b  (b = message.values[0])
+            //Palier le probleme que le preset est pas précisé...Chiant + j'ai du initialisé JSON avant pour eviter soucis EventID manquant
+            if (message.address == "/vcs" && widgetDone == false) //evite calcul inutile le widgetdone et bug aussi du dernier preset qui change constant
+            {
+                Debug.Log("Encodage (via blob) du preset n°" + presetNoCorrect);
+                byte[] blobpreset = (byte[])message.values[0];
+
+                if (blobpreset.Length > 8) //pour éviter message inutile envoyé constant
+                {
+                    for (int i = 0; i <= blobpreset.Length - 8; i += 8)
+                    {
+                        SwapBytes(blobpreset, i);
+                        SwapBytes(blobpreset, i + 4);
+                        int eventID = System.BitConverter.ToInt32(blobpreset, i);
+                        float valueWidget = System.BitConverter.ToSingle(blobpreset, i + 4);
+                        //trop de calcul car leur systeme mal foutu...
+                        if (valueWidget != 0.12345f)
+                        {
+                            //Debug.Log("Preset" + presetNoCorrect + "  EventID : " + eventID + "  ValueWidget : " + valueWidget);
+                            CorrectValue(eventID, valueWidget, presetNoCorrect);
+                            //vérification si on a deja tout parcouru niveau widget (évite erreur sur dernier widget modifié constant par changement de preset)
+                            if (presetNoCorrect == (popini + 1) && i == blobpreset.Length - 16) //donc on a parcouru tout les widget du dernier preset
+                            {
+                                widgetDone = true; //on arrete les modif, on a tout ce qui nous faut
+                                var client = GetComponent<uOscClient>();
+                                client.Send("/preset", silence);
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
+        //***************************************************************************************************************************//
+        //RESOLUTION BLOB => methode pour littleEndian systeme (Windows mais pas besoin pour Mac)
+        void SwapBytes(byte[] aBytes, int aIndex)
+        {
+            var b0 = aBytes[aIndex + 0];
+            var b1 = aBytes[aIndex + 1];
+            var b2 = aBytes[aIndex + 2];
+            var b3 = aBytes[aIndex + 3];
+            aBytes[aIndex + 0] = b3;
+            aBytes[aIndex + 1] = b2;
+            aBytes[aIndex + 2] = b1;
+            aBytes[aIndex + 3] = b0;
+        }
+
+        //***************************************************************************************************************************//
         void FixedUpdate()
         {
+            //Initialisation widget de chaque sphere------------------
+            if (ok == true && nbwidg != 0)
+            {
+                JsonEachWidget(); //récup les eventID et initialise à max all widget
+                ok = false;
+            }
+            if (ok2 == true)
+            {
+                //Déclenchement de Blob-----------------------------------------------
+                //je traite ainsi tout mes blob de chaque preset dès le début mais la méthode reste indésiré
+                StartCoroutine(WaitPleaseSendBlob(0.2f)); //car blob trop lent à arriver donc 0.2 sec pour prendre en compte tout les blob
+                //Déclenchement de Blob Propre-----------------------------------------------
+                //méthode propre mais non fonctionnel sur kyma (retard sur la création de blob)
+                //var bundlePreset = new Bundle(Timestamp.Now);
+                //for (int i = 1; i < 9; i++) 
+                //{
+                //    if (i != silence) //preset silence degagé
+                //    {
+                //        bundlePreset.Add(new Message("/preset", i));
+                //    }
+                //}
+                //client.Send(bundlePreset);
+                ok2 = false;
+            }
 
             //Stars Rating Affichage-------------------------------------
             if (star > numOfStars)
-                star = numOfStars;      
+                star = numOfStars;
             for (int i = 0; i < stars.Length; i++)
             {
                 //en cas d'erreur
@@ -186,31 +347,24 @@ namespace uOSC
                     starecs[i].enabled = false;
             }//------------------------------------------------------------
 
+            //Partie Réalité augmenté calcule-------------------------------------------------------------------------
             origin = GameObject.Find("MixedRealityCamera").transform.position;//la pos sur lequel raycast se trouve
             direction = GameObject.Find("MixedRealityCamera").transform.forward; //la direction du vecteur 
-            //Raycast:----------------------------------------------------------------------------------------
-            Ray ray = new Ray(origin, direction); //raycast
-                                                  // RaycastHit[] hits = Physics.RaycastAll(ray, maxRayDistance); //pour toucher à longue portée toutes mes spheres
-            Debug.DrawLine(origin, GameObject.Find("MixedRealityCamera").transform.position + direction * maxRayDistance, Color.red); //dessin mon raycast sur la scène:
-
-            //foreach (RaycastHit hit in hits) // si je veux calculer pour toutes les spheres touchées
-            RaycastHit hit; //pour le solo
+            Ray ray = new Ray(origin, direction);
+            Debug.DrawLine(origin, GameObject.Find("MixedRealityCamera").transform.position + direction * maxRayDistance, Color.red);
+            RaycastHit hit;
             if (Physics.Raycast(origin, direction, out hit) && hit.collider.GetType() == typeof(SphereCollider))
             {
-                //Calcul du poids:------------------------------------------------------------------------------------
                 sphere = (SphereCollider)hit.collider;
                 //Debug.DrawLine(hit.point, hit.point + Vector3.up, Color.cyan);  //j'affiche une verticale sur intersection touchée       
                 VecHypo = sphere.transform.position - ray.origin; //position sphere (centre) - point dd'origine camera Raycast = Hypo vecteur
-                //Hypo = Vector3.Dot(VecHypo, VecHypo); //hypo produit vectoriel
                 Adj = Vector3.Dot(VecHypo, direction); //Adjacente (hypo projeté) sur là où je regarde car hypo par rapport au centre
-                //oppose = Mathf.Sqrt((Hypo * Hypo) - (Adj * Adj)); //opposé
                 dist = Adj - hit.distance; //distance entre là où je regarde (jusque centre projeté parallele) et là où je frappe avec hit
                 t0 = Adj - dist;
                 //t1 = Adj + dist;
                 start = ray.origin + direction * t0;
                 //end = ray.origin + direction * t1;
                 ma = dist; //car joue le role de notre adj par rapport à moyenne de point t0 et t1
-                //R = (float) (sphere.radius*1.4 / 2); //car radius de sphere du collider = diamètre et 1.4 pour scale look
                 R = (float)(sphere.radius / 2);
                 r = Mathf.Sqrt((R * R) - (ma * ma));
                 w = 1 - (r / R);
@@ -218,53 +372,44 @@ namespace uOSC
                 //Debug.DrawLine(start, start + Vector3.down, Color.blue);
                 //Debug.DrawLine(end, end + Vector3.down, Color.green);
 
-                //MessageOSC + Scale :------------------------------------------------------------------------------------
-                n = hit.collider.GetComponent<InfoSphere>().presetno;
+
+                //Canvas :------------------------------------------------------------------------------------
                 if (lecanvas.GetComponent<CanvasGroup>().alpha != 1)
                 {
                     lecanvas.GetComponent<CanvasGroup>().alpha = 1f;
                 }
                 lecanvas.GetComponent<RectTransform>().position = start;
-                //star function cost-----------------------------------------------------------------------------------------------------
+
+                //GENETIC ALGO : star function cost-----------------------------------------------------------------------
                 star = (int)(w * 5) + 1;
-                if (hit.collider.GetComponent<InfoSphere>().tap == true)  // A remplacer avec IInputClickHandler ou IInputHandler  ?
+                if (hit.collider.GetComponent<InfoSphere>().tap == true)
                 {
                     hit.collider.GetComponent<InfoSphere>().nstar = star;
                     hit.collider.GetComponent<InfoSphere>().tap = false;
                 }
                 starec = hit.collider.GetComponent<InfoSphere>().nstar;
 
-                //Music + Alpha--------------------------------------------------------------------------------------------------
+                //Music + Alpha-------------------------------------------------------------------------------------------
+                n = hit.collider.GetComponent<InfoSphere>().presetno;
                 if (w != 0 && n != m)
                 {
                     StartCoroutine(ChangeMusic());
                     if (onerequest == true)
                     {
-
                         m = n;
-                        //lastcollider.GetComponent<Renderer>().transform.localScale = lastcollider.GetComponent<Renderer>().transform.localScale / 1.4f;
-                        //lastcollider.GetComponentInChildren<Renderer>().material.color = changeAlpha(lastcollider.GetComponentInChildren<Renderer>().material.color, 0.1f);
                         foreach (var item in allsphere)
                         {
                             item.GetComponentInChildren<Renderer>().material.color = changeAlpha(item.GetComponentInChildren<Renderer>().material.color, 0.1f);
                         }
                         onerequest = false;
-                        onerequest = false;
-
                     }
                     if (onerequest == false)
                     {
                         m = n;
-                        //hit.collider.GetComponent<Renderer>().transform.localScale = hit.collider.GetComponent<Renderer>().transform.localScale * 1.4f;              
-                        //hit.collider.GetComponentInChildren<Renderer>().material.color = changeAlpha(hit.collider.GetComponentInChildren<Renderer>().material.color, 0.8f);
                         StartCoroutine(FadeTo(hit.collider, 1.0f, 0.5f));
                         onerequest = true;
-                        //lastcollider = hit.collider;
-
                     }
-
                 }
-
             }
             else
             {
@@ -275,8 +420,6 @@ namespace uOSC
                 StartCoroutine(ChangeMusic());
                 if (onerequest == true)
                 {
-                    //lastcollider.GetComponent<Renderer>().transform.localScale = lastcollider.GetComponent<Renderer>().transform.localScale / 1.4f;
-                    //lastcollider.GetComponentInChildren<Renderer>().material.color = changeAlpha(lastcollider.GetComponentInChildren<Renderer>().material.color, 0.1f);
                     foreach (var item in allsphere)
                     {
                         item.GetComponentInChildren<Renderer>().material.color = changeAlpha(item.GetComponentInChildren<Renderer>().material.color, 0.1f);
@@ -285,20 +428,17 @@ namespace uOSC
                 }
             }
 
-
-
-            //GENETIC ALGO-----------------------------------------------------------------------------------------
-            //Vérification si c'est un boxcollider (DNA)
+            //----------------------------------------------------------------------------------------------------
+            //---------------------------------GENETIC ALGORITHM--------------------------------------------------
+            //----------------------------------------------------------------------------------------------------
             if (Physics.Raycast(origin, direction, out hit) && hit.collider.GetType() != typeof(SphereCollider))
-            {
-                goGenetic = true; //Ok verif réussie
-            }
+                goGenetic = true;
             else
-            {
-                goGenetic = false; //échoue
-            }
-            //Si je clique sur DNA => Algo Genetic
-            if (GameObject.Find("DNA").GetComponent<GeneticActivate>().DNA == true && goGenetic)
+                goGenetic = false;
+            //Si je clique sur DNA => Algo Genetic :
+
+            //if (GameObject.Find("dna").GetComponent<ActiveGenetic>().act == true && goGenetic)
+            if (Input.GetKeyDown(KeyCode.S))
             {
 
                 //Selection naturelle : Seuillage/Tresholding-------------------
@@ -307,7 +447,7 @@ namespace uOSC
                 {
                     if (i != silence && GameObject.Find("SpherePreset_" + i)) //preset silence degagé + Je find mes objects
                     {
-                        //je verifie que la pop initiale n'a pas été liquidié totalement avec un seuil de survie de 1/3
+                        //je verifie que la pop initiale n'a pas été liquidié totalement avec un seuil de survie de 1/2
                         //et je dégage les spheres qui ont moins de 3 étoiles
                         if (allsphere.Count > ((popini / 2)) && GameObject.Find("SpherePreset_" + i).GetComponent<InfoSphere>().nstar <= 2)
                         {
@@ -318,74 +458,20 @@ namespace uOSC
                     }
                 }
 
-                //Selection Mating + Mating : au hasard sur les keep-------------------
-                int justparent = popini - nokeep; //reproduction qu'entre parents
-                Debug.Log(justparent);
-                while (popini != allsphere.Count)
-                {
-                    int male = Random.Range(0, justparent); // dernier element non compris vu que 0 start
-                    int female = Random.Range(0, justparent);
-                    while (male == female) //pour pas le même chrosome en couple
-                    {
-                        female = Random.Range(0, justparent);
-                    }
-
-                    GameObject parent1 = allsphere[male];
-                    GameObject parent2 = allsphere[female];
-                    for (int i = 1; i <= popini + 1; i++)
-                    {
-                        if (i != silence && !GameObject.Find("SpherePreset_" + i)) //preset silence degagé + vérifie si aucun même nom existe
-                        {
-                            childName = "SpherePreset_" + i;//rempli les trou de i sphere 
-                            childpresetno++;
-                            break;
-                        }
-                    }
-
-                    SphereMusicClone = Instantiate(SphereMusic) as GameObject;
-                    SphereMusicClone.transform.position = new Vector3(this.transform.position.x + Random.Range(-1f, 1f), this.transform.position.y + Random.Range(-1f, 1f), this.transform.position.z + Random.Range(-0.3f, 1f));
-                    SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 3f));
-                    Color mergeColor = (parent1.GetComponentInChildren<Renderer>().material.color + parent2.GetComponentInChildren<Renderer>().material.color) / 2;
-                    SphereMusicClone.GetComponentInChildren<Renderer>().material.color = changeAlpha(mergeColor, 0.3f); //9 preset max
-                    SphereMusicClone.name = childName;
-                    InfoSphere scriptvaleur = SphereMusicClone.GetComponent<InfoSphere>();
-                    scriptvaleur.presetno = childpresetno;
-                    allsphere.Add(SphereMusicClone); //pas dans le bon ordre vu qu'on ajoute en dernier => Attention !!
-
-                    //parents 1 Split + parents 2 split = encodage this sphere !!!!!!!!!!!!!!!!!!!! OU AU HASARD INVERSE 1 et 2
-                    //parents 2 Split + Parents 1 split = encodage this second sphere !!!!!!!!!!!!!??????
-                    //puis on modifie et save sur le preset ecrase n° childpresetno 
-                    scriptvaleur.encodage = allsphere[male].GetComponent<InfoSphere>().encodage + allsphere[female].GetComponent<InfoSphere>().encodage;
-                    Debug.Log(SphereMusicClone.name + " = " + allsphere[male].name + " + " + allsphere[female].name);
-                    //Mutations Elitisme : sur les 3 etoiles(une chance sur 2) si existe-------------------
-                }
-                goGenetic = false;
-                GameObject.Find("DNA").GetComponent<GeneticActivate>().DNA = false;
-            }
+                //Selection Mating + Mating + Mutation------------------------------
+                justparent = popini - nokeep; //reproduction qu'entre parents
+                StartCoroutine(MatingSaveChild(0.2f)); //Coroutine car kyma trop lent a comprendre les mess....
 
 
-            if (Input.GetKeyDown(KeyCode.L))
-            {
-                //mutation...
-                //Pour cela, utilisation de générateur Random paire(X, X) ligne colonne parmis les chromosomes 3 etoiles
                 var client = GetComponent<uOscClient>();
-                var bundle1 = new Bundle(Timestamp.Now);
-                bundle1.Add(new Message("/vcs", 3145730, 0.2f));
-                bundle1.Add(new Message("/vcs", 3145731, 0.5f));
-                bundle1.Add(new Message("/vcs", 3145732, 0.7f));
-
-                client.Send(bundle1);
-                Debug.Log(bundle1);
-                //client.Send("/preset", 130); //creation d'un new preset
+                client.Send("/preset", silence);
+                //goGenetic = false;
+                //GameObject.Find("DNA").GetComponent<ActiveGenetic>().act = false;
             }
-
-
-
 
         }
 
-
-
+        //***************************************************************************************************************************//
         void OnApplicationQuit()
         {
             //Prévenir Paca que c'est terminé avec l'indice 0
@@ -393,13 +479,13 @@ namespace uOSC
             client.Send("/osc/respond_to", 0);
             Debug.Log("Disconnected from Pacarana");
         }
-
-
+        //***************************************************************************************************************************//
 
         //------------------------------------
         // Méthodes utilitaires :
         //------------------------------------
 
+        //***************************************************************************************************************************//
         IEnumerator ChangeMusic()  //Une co-routine renvoie toujours un type spécial : IEnumarator
         {
             if (n != m)
@@ -412,7 +498,7 @@ namespace uOSC
             }
         }
 
-
+        //***************************************************************************************************************************//
         IEnumerator FadeTo(Collider coli, float aValue, float aTime)
         {
             float alpha = coli.GetComponentInChildren<Renderer>().material.color.a;
@@ -425,109 +511,156 @@ namespace uOSC
 
         }
 
-
+        //***************************************************************************************************************************//
         Color changeAlpha(Color color, float newAlpha)
         {
             color.a = newAlpha;
             return color;
         }
 
-
-        IEnumerator Wait()
+        //***************************************************************************************************************************//
+        void JsonEachWidget()
         {
-            yield return new WaitForSeconds(1);
+            var client = GetComponent<uOscClient>();
+            var bundleWidget = new Bundle(Timestamp.Now);
+
+            for (int i = 0; i < nbwidg; i++)
+            {
+                bundleWidget.Add(new Message("/osc/widget", i));
+            }
+            client.Send(bundleWidget);
         }
 
-        void OnDataReceived(Message message)
+        //***************************************************************************************************************************//
+        //Cette méthode permet de recevoir les info (blob) de chaque preset
+        //en tant normal il ne faudrait pas procéder de cette manière mais envoyer un bundle
+        //le soucis c'est que kyma ne s'en sort pas avec le bundle et n'envoie pas tout les blob mais receptionne bien le bundle.
+        IEnumerator WaitPleaseSendBlob(float t)
         {
-
-            // address---------------------------
-            var msg = message.address + ": ";
-
-
-            // timestamp------------------------
-            msg += "(" + message.timestamp.ToLocalTime() + ") ";
-
-            // values---------------------------
-            foreach (var value in message.values)
+            var client = GetComponent<uOscClient>();
+            for (int i = 1; i <= presetnumber; ++i)
             {
-                msg += value.GetString() + " ";
-                valeur = value; //revoir optimisation
-            }
-
-            //pour savoir si co-------------------------
-            if (message.address == "/osc/response_from")
-            {
-                Debug.Log(msg + " => Connected to Pacarana");
-            }
-
-            //pour savoir le nb de widget
-            if (message.address == "/osc/notify/vcs/hajji")
-            {
-                nbwidg = (int)valeur;
-                Debug.Log("nombre de widget : " + nbwidg);
-            }
-
-            //pour le nombre de sph------------------------
-            if (message.address == "/osc/notify/presets/hajji")
-            {
-                presetnumber = (int)valeur;
-                Debug.Log(msg + " => Nombre : " + valeur);
-                //Je créé le nombre de sphère requis : 
-                //population initial composé de presetnumber chromosomes qui sont composé de nwidget gênes
-                for (int i = 1; i <= presetnumber; i++)
+                if (i != silence) //preset silence degagé
                 {
-                    if (i != silence) //preset silence degagé
+                    var bundleWidget = new Bundle(Timestamp.Now);
+                    foreach (int item in listID) //premier par exemple (initialisé par Json)
                     {
-                        string objectName = "SpherePreset_" + i; // Obtenir le nom avec / preset ... etc !!! => A optimiser
-                                                                 // float angleIteration = 360 / presetnumber;
-                                                                 // float currentRotation = angleIteration * i;
-                        SphereMusicClone = Instantiate(SphereMusic) as GameObject;
-                        SphereMusicClone.transform.position = new Vector3(this.transform.position.x + Random.Range(-1f, 1f), this.transform.position.y + Random.Range(-1f, 1f), this.transform.position.z + Random.Range(-0.3f, 1f));
-                        // SphereMusicClone.transform.rotation = this.transform.rotation;
-                        // SphereMusicClone.transform.Rotate(new Vector3(0, currentRotation, 0));
-                        SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 3f));
-                        SphereMusicClone.GetComponentInChildren<Renderer>().material.color = changeAlpha(mycolors.Pop(), 0.3f); //9 preset max
-                        SphereMusicClone.name = objectName;
-                        InfoSphere scriptvaleur = SphereMusicClone.GetComponent<InfoSphere>();
-                        scriptvaleur.presetno = i;
-                        allsphere.Add(SphereMusicClone);
+                        bundleWidget.Add(new Message("/vcs", (int)item, 0.12345f)); //envoie d'une valeur hasardeuse pour creer un changement lorsque je reçois blob
+                    }
+                    client.Send(bundleWidget); //creation du changement pour chaque preset
+                    presetNoCorrect = i;
+                    client.Send("/preset", i);
+                    yield return new WaitForSeconds(t);
+                }
+            }
+        }
+        //***************************************************************************************************************************//
+        void CorrectValue(int eventID, float valueWidget, int x)
+        {
+            if (x >= silence + 1) //pour le preset silence éviter dans une autre boucle, creer probleme ici
+            {
+                x = x - 2;
+            }
+            else
+            {
+                x = x - 1; // car liste commence à preset 0
+            }
 
+            //intégration de nos valeurs 
+            for (int i = 0; i < nbwidgclean; i++)
+            {
+                if (allsphere[x].GetComponent<InfoSphere>().widgetValue[i].x == eventID)
+                {
+                    Vector2 tempo = new Vector2((float)eventID, valueWidget);
+                    allsphere[x].GetComponent<InfoSphere>().widgetValue[i] = tempo;
+                }
+            }
+
+        }
+        //***************************************************************************************************************************//
+        IEnumerator MatingSaveChild(float t)
+        {
+            while (popini != allsphere.Count)
+            {
+                int male = Random.Range(0, justparent); // dernier element non compris vu que 0 start
+                int female = Random.Range(0, justparent);
+                while (male == female) //pour pas le même chrosome en couple
+                {
+                    female = Random.Range(0, justparent);
+                }
+                GameObject parent1 = allsphere[male];
+                GameObject parent2 = allsphere[female];
+                for (int i = 1; i <= popini + 1; i++)
+                {
+                    if (i != silence && !GameObject.Find("SpherePreset_" + i)) //preset silence degagé + vérifie si aucun même nom existe
+                    {
+                        childName = "SpherePreset_" + i;//rempli les trou de i sphere 
+                        childpresetno++;
+                        break;
                     }
                 }
-                popini = allsphere.Count;
-                childpresetno = popini + 1; //+1 car silence pas compté dans popini
-            }
 
-            // After bundle que j'ai send avec /osc/widget, i
+                SphereMusicClone = Instantiate(SphereMusic) as GameObject;
+                SphereMusicClone.transform.position = new Vector3(this.transform.position.x + Random.Range(-1f, 1f), this.transform.position.y + Random.Range(-1f, 1f), this.transform.position.z + Random.Range(-0.3f, 1f));
+                SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 3f));
+                Color mergeColor = (parent1.GetComponentInChildren<Renderer>().material.color + parent2.GetComponentInChildren<Renderer>().material.color) / 2;
+                SphereMusicClone.GetComponentInChildren<Renderer>().material.color = changeAlpha(mergeColor, 0.3f); //9 preset max
+                SphereMusicClone.name = childName;
+                InfoSphere scriptvaleur = SphereMusicClone.GetComponent<InfoSphere>();
+                scriptvaleur.presetno = childpresetno;
+                allsphere.Add(SphereMusicClone); //pas dans le bon ordre vu qu'on ajoute en dernier dans la liste (contenant deja les anciens) => Attention !!
 
-            if (message.address == "/osc/widget") //value[0] = index of widget and value[1] = JSON String
-            {
-
-                var jsonstring = (string)message.values[1];
-                // Debug.Log(jsonstring);
-
-                Rootobject json = JsonConvert.DeserializeObject<Rootobject>(jsonstring);
-
-                if (json != null && json.label != "Trigger" && json.concreteEventID != 0)
+                //faire random avant... parent1 et 2-----------------
+                int crossing = Random.Range(1, 2);
+                //si crossing = 1, alors crossing normal
+                GameObject p1 = parent1;
+                GameObject p2 = parent2;
+                //sinon si crossing = 2, alors crossing inverse
+                if (crossing == 2)
                 {
-                    foreach (var item in allsphere)
-                    {
-                        item.GetComponent<InfoSphere>().widgetValue.Add(json.concreteEventID, json.label);
-                        Debug.Log(item.GetComponent<InfoSphere>().widgetValue[json.concreteEventID]);
-                    }
-
+                    p2 = parent1;
+                    p1 = parent2;
                 }
 
+                for (int i = 0; i < p1.GetComponent<InfoSphere>().widgetValue.Count / 2; i++)
+                {
+                    scriptvaleur.widgetValue.Add(p1.GetComponent<InfoSphere>().widgetValue[i]);
+                    //Debug.Log(" x : " + p1.GetComponent<InfoSphere>().widgetValue[i].x + " et y :" + p1.GetComponent<InfoSphere>().widgetValue[i].y);
+                }
+                for (int i = p1.GetComponent<InfoSphere>().widgetValue.Count / 2; i < p2.GetComponent<InfoSphere>().widgetValue.Count; i++)
+                {
+                    scriptvaleur.widgetValue.Add(p2.GetComponent<InfoSphere>().widgetValue[i]);
+                    //Debug.Log(" x2 : " + p2.GetComponent<InfoSphere>().widgetValue[i].x + " et y2 :" + p2.GetComponent<InfoSphere>().widgetValue[i].y);
+                }
 
+                Debug.Log(SphereMusicClone.name + " = " + allsphere[male].name + " + " + allsphere[female].name);
+
+                //Création du preset enfant sur kyma--------------------------------------
+                //on se place sur un preset parent pour save
+                var client = GetComponent<uOscClient>();
+                //client.Send("/preset", 8); //car kyma commence par preset 1 // PROBLEME ?????????????????? VU LA POSITION DU PRESET
+
+                var bundle1 = new Bundle(Timestamp.Now);
+                foreach (var item in scriptvaleur.widgetValue)
+                {
+                    int eventKyma = (int)item.x;
+                    float valueKyma = item.y;
+                    bundle1.Add(new Message("/vcs", eventKyma, valueKyma));
+                    //Debug.Log("vcs child : " + eventKyma + " et value " + valueKyma);
+                }
+                client.Send(bundle1);
+                Debug.Log("sauvegarde...");
+                client.Send("/preset", 130); //creation d'un new preset
+
+                //Mutations Elitisme : sur les 3 etoiles(une chance sur 2) si existe-------------------
+                //mutation...
+                //Pour cela, utilisation de générateur Random paire(X, X) ligne colonne parmis les chromosomes 3 etoiles
+
+                yield return new WaitForSeconds(t);
             }
-
-
-
         }
 
     }
-
 
     // GENETIC ALGORITHME :
     //------------------------ 
@@ -545,65 +678,5 @@ namespace uOSC
     6) Mutations Elitisme : sur les 3 etoiles (une chance sur 2) si il y en a ! Pour cela, utilisation de générateur Random paire ( X, X) ligne colonne parmis les chromosomes 3 etoiles
        Rmq : pas de mutation sur iteration final... donc attention car c'est le gars qui itere => A voir
     7) FIN : Convergence en fonction du besoin et des gouts de l'utilisateur
-
     */
 }
-
-
-
-
-
-
-
-/*
- * ⇒ /preset,i	index	Select the given VCS preset
-Use this message to select a particular VCS preset. 
-
-The integer argument is the one-based index into the array of VCS presets. Use 126 to select the previous preset, 127 to select the next preset, 128 to roll the dice, 129 to resend the current settings, 130 to save the current settings as a new preset.
-
-
-    
-⇒ /vcs,if...	eventID1, value1, ...	Change the value of one or more VCS widgets
-Use this message to change the value of one or more VCS widgets, identified by EventID. An EventID is a unique number identifying the source of control and can be obtained from the concreteEventID entry in the widget information returned by the /osc/widget,i message. 
-
-The argument is any number (up to 128) of EventID/value pairs and the number of pairs is indicated in the OSC message type. For example, to send three pairs you would use /vcs,ififif. 
-
-Also see below for a simpler message to change the value of a widget using the name instead of the EventID.
-
-
-
-
-    // OSEF ?
-    ⇐ /vcs,b	{ byteCount, int_id0, float_value0, ... }	Notification of change of value of one or more VCS widgets
-The Paca(rana) sends this message to your software if VCS notifications have been turned on and one or more VCS widgets have changed value. 
-
-The blob argument contains big-endian data in the following format: 
-
-byteCount is the size of the blob in bytes; byteCount / 8 is the number of EventID/value pairs in the blob 
-
-int_id0, float_value0 is the 32-bit integer EventID and the 32-bit float value of the widget that changed value 
-
-... repeat EventID and value pairs for each widget that changed value.
-
-
-
-
-
-    ⇒ /vcs/<name>/<channel>,f	value	Change the value of the named VCS widget
-Use this message to change the value of the VCS widget with the given name on the given channel. 
-
-<name> and <channel> are placeholders for the real name and channel of the widget to be changed. For example, to change the BPM fader on channel 1, you would use the message /vcs/BPM/1. 
-
-The float argument is the new value for the named widget. 
-
-See this discussion for more information about this set of messages. 
-
-The Paca(rana) replies to the sender of this message when the widget's value is changed using the VCS or other source of control of the widget (see below).
-
-    http://www.symbolicsound.com/cgi-bin/bin/view/Learn/ProgramOSCMessages
-
-
-VOIR LEXAMPLE SOURCE POUR POURCENTAGE AVEC /VCS
-
-
-    */

@@ -11,13 +11,11 @@ public class InfoSphere : MonoBehaviour, IInputClickHandler
 
     public int nstar = 3;
 
-    public int encodage = 1; //faudrait mettre toute les valeur des widget en pourcentage  //dictionnaire avec EventID , Value ? 
-
-    public Dictionary<int, string> widgetValue;
+    public List<Vector2> widgetValue = new List<Vector2>();
+    //mieux que dictionnaire pour mating + mutation
 
     public void Start()
     {
-        widgetValue = new Dictionary<int, string>();
     }
 
     public virtual void OnInputClicked(InputClickedEventData eventData)

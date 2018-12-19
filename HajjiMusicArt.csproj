@@ -745,7 +745,7 @@
     <Compile Include="Assets\HoloToolkit\UX\Scripts\UICollection.cs" />
     <Compile Include="Assets\HoloToolkit\UX\Scripts\UsabilityScaler.cs" />
     <Compile Include="Assets\HoloToolkit\UX\Scripts\UsabilityUtilities.cs" />
-    <Compile Include="Assets\Scripts\GeneticActivate.cs" />
+    <Compile Include="Assets\Scripts\ActiveGenetic.cs" />
     <Compile Include="Assets\Scripts\InfoSphere.cs" />
     <Compile Include="Assets\Scripts\Osc_Script\Core\Bundle.cs" />
     <Compile Include="Assets\Scripts\Osc_Script\Core\DotNet\Thread.cs" />

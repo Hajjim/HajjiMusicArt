@@ -1,6 +1,6 @@
 Metro
 PlayerPath?
-C:/Users/Hajji/Desktop/Nouveau dossier
+C:/Users/Hajji/Desktop/versiondu12decembre
 SceneListBegin?
 Assets/Scenes/Main.unity
 SceneListEnd?
@@ -168,6 +168,7 @@ ba66ed51a66e14863f51781e69c657ef Assembly-CSharp.dll:HoloToolkit.UI.Keyboard.Key
 5bb981e3ed5435eba69a415650b6af6e Assembly-CSharp.dll:HoloToolkit.Unity.SolverRadialView
 5645d472525403b5344c650d3f68dd7b Assembly-CSharp.dll:HoloToolkit.Unity.InputModule.ManualGazeControl
 ef555ddf7468f062559f9ce6ab4c299f Assembly-CSharp.dll:HoloToolkit.Unity.SpatialMapping.SurfaceMeshesToPlanes
+f2a98ba89481104a79080d7225179c7e Assembly-CSharp.dll:.ActiveGenetic
 d932d0380045d7c00ec92e1b367f7fc6 Assembly-CSharp.dll:HoloToolkit.Unity.Boundary.BoundaryManager
 7e158512b81a0378a6f14a3462ee52c3 Assembly-CSharp.dll:HoloToolkit.Unity.AudioLoFiEffect
 f3895aa0f8579c0a6204ed8fd873188c Assembly-CSharp.dll:HoloToolkit.Unity.UX.BoundingBoxGizmo
@@ -209,7 +210,7 @@ c4fd2ef7468c68e11d03e50c6e8b323d Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.A
 a791e7387cb4113e3b29c2bbd8199b96 Assembly-CSharp.dll:HoloToolkit.Unity.UX.DistorterGravity
 af1b899928fa73a7824f1b26518097f6 Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.MeshButton
 44f24521fcafda017d17ab4dbb73c0cc Assembly-CSharp.dll:HoloToolkit.UX.ToolTips.ToolTipConnector
-25faa312941bebd8147233d3956655cf Assembly-CSharp.dll:uOSC.SphereManager
+9b37da8b18de30d0be6c2b359138fed3 Assembly-CSharp.dll:uOSC.SphereManager
 8186a0148b55fd4b5cdaa99b9937cf7d Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.ButtonMeshProfile
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:HoloToolkit.Unity.SpatialMapping.SpatialMappingSource
 bffc879e328df7088b4672067d06833b Assembly-CSharp.dll:HoloToolkit.Unity.UX.LineParticles
@@ -341,4 +342,3 @@ ecc14250990e8ffd4a0bb635da7c50c3 Assembly-CSharp.dll:HoloToolkit.Unity.AtlasPref
 97e0d51968a9f637800faf850b1d95a2 Assembly-CSharp.dll:HoloToolkit.Unity.UX.BoundingBoxRig
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:.LineBaseEditor
 b74d6034034deeffc1401e25ca9027a5 Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.CompoundButton
-134a5e8453b508ac6cfa0f414096b5b7 Assembly-CSharp.dll:.GeneticActivate
