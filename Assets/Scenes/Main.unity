@@ -1068,10 +1068,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inPort: 9000
-  silence: 4
+  silence: 1
   SphereMusic: {fileID: 1195183402972904, guid: 20cf7e1bd179627409a00cb7c7cba53a,
     type: 2}
   IdValue: {x: 0, y: 0}
+  scriptvaleur: {fileID: 0}
   star: 0
   numOfStars: 5
   stars:
@@ -1105,7 +1106,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0cbc667ff072c14787d88a437ff5a6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  address: 172.30.15.104
+  address: 172.30.15.103
   port: 8000
 --- !u!114 &1568282651
 MonoBehaviour:
@@ -1192,6 +1193,34 @@ Camera:
   m_PrefabParentObject: {fileID: 20049547090947856, guid: 3eddd1c29199313478dd3f912bfab2ab,
     type: 2}
   m_PrefabInternal: {fileID: 1505774826}
+--- !u!1 &2002434611
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 2002434612}
+  m_Layer: 0
+  m_Name: Presets
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2002434612
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2002434611}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2033206371
 GameObject:
   m_ObjectHideFlags: 0

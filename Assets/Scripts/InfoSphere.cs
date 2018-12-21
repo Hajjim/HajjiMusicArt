@@ -9,6 +9,8 @@ public class InfoSphere : MonoBehaviour, IInputClickHandler
 
     public int presetno;
 
+    public string presetName = "";
+
     public int nstar = 3;
 
     public List<Vector2> widgetValue = new List<Vector2>();

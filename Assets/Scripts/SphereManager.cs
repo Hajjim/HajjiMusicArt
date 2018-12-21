@@ -6,6 +6,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.WSA.Input;
 
+// Attention :  Placement d'un preset mute en position 1 de Kyma est obligatoire pour le bon fonctionnement de l'appli.
+// Remarque  :  Projet limité à 10 widget max (car 10 couleurs différente de sphere max) sinon plusieurs sphere meme color.
+
 namespace uOSC
 {
     [RequireComponent(typeof(uOscClient))]
@@ -17,7 +20,7 @@ namespace uOSC
         //------------------------------------
 
         public int inPort = 9000;
-        public int silence = 4;
+        public int silence = 1;
         public GameObject SphereMusic;
         private GameObject SphereMusicClone;
         bool onerequest = false;
@@ -25,12 +28,17 @@ namespace uOSC
         bool anothertime = false;
         public Vector2 IdValue;
         List<int> listID;
-        private bool ok = false;
-        private bool ok2 = false;
+        private bool EtapeJson = false;
+        private bool EtapePreset = false;
         private bool widgetDone = false;
-        private int presetNoCorrect = 1;
+        private bool EtapeName = false;
+        private bool indexDico = false;
+        private bool premiereGene = true;
         public InfoSphere scriptvaleur;
         private int justparent;
+        private int presetNoCorrect = 1;
+        Dictionary<string, int> indexName;
+        GameObject container;
 
         public int star;
         public int numOfStars;
@@ -76,7 +84,6 @@ namespace uOSC
         private float R; //mini hypoth
         private float w = 0; //poids
         Stack<Color> mycolors = new Stack<Color>();
-        private GestureRecognizer recognizer;
 
 
         //------------------------------------
@@ -133,6 +140,8 @@ namespace uOSC
 
             listID = new List<int>();
             allsphere = new List<GameObject>();
+            indexName = new Dictionary<string, int>();
+            container = GameObject.Find("Presets");
 
             var client = GetComponent<uOscClient>();
             var server = GetComponent<uOscServer>();
@@ -145,11 +154,6 @@ namespace uOSC
             client.Send("/osc/notify/presets/hajji", 1); //Demande du nombre de preset (notification active en cas de changement grâce à l'indice 1)
             Debug.Log("Demande du nombre de preset...");
 
-            //mon preset silence
-            //n = silence;µ
-            //se positionne preset 1
-            //n = 1;
-            //StartCoroutine(ChangeMusic());
 
         }
 
@@ -159,15 +163,10 @@ namespace uOSC
 
             // address---------------------------
             var msg = message.address + ": ";
-
-            // timestamp------------------------
             msg += "(" + message.timestamp.ToLocalTime() + ") ";
-
-            // values---------------------------
             foreach (var value in message.values)
             {
                 msg += value.GetString() + " ";
-                valeur = value; //revoir optimisation
             }
 
             //pour savoir si co-------------------------
@@ -176,19 +175,57 @@ namespace uOSC
                 Debug.Log(msg + " => Connected to Pacarana");
             }
 
-            //pour savoir le nb de widget
+            //pour savoir le nb de widget----------------
             if (message.address == "/osc/notify/vcs/hajji")
             {
-                nbwidg = (int)valeur;
-                Debug.Log("nombre de widget : " + nbwidg);
-                ok = true;//pour update la liste des preset
+                nbwidg = (int)message.values[0];
+                //Debug.Log("nombre de widget : " + nbwidg);
             }
 
-            //pour le nombre de sph------------------------
+            //pour nom de preset et indexation-------------
+            if (message.address == "/osc/preset")
+            {
+                int noPreset = (int)message.values[0] + 1; //pour commencer à 1
+                string namePreset = (string)message.values[1];
+
+                if (premiereGene == true)
+                {
+                    indexName.Add(namePreset, noPreset);
+                    foreach (Transform child in container.transform)
+                    {
+                        if (child.gameObject.GetComponent<InfoSphere>().presetno == noPreset)
+                        {
+                            child.gameObject.GetComponent<InfoSphere>().presetName = namePreset;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (Transform child in container.transform)
+                    {
+                        if (child.gameObject.GetComponent<InfoSphere>().presetno == 0 && !indexName.ContainsKey(namePreset) && child.gameObject.GetComponent<InfoSphere>().presetName == "")
+                        {
+                            Debug.Log("ICI CHILD");
+                            indexName.Add(namePreset, noPreset);
+                            child.gameObject.GetComponent<InfoSphere>().presetno = noPreset;
+                            child.gameObject.GetComponent<InfoSphere>().presetName = namePreset;
+                        }
+                        else if (child.gameObject.GetComponent<InfoSphere>().presetName == namePreset) //+1 car presetno commence à 1
+                        {
+                            Debug.Log("zzzzICI CHILD");
+
+                            child.gameObject.GetComponent<InfoSphere>().presetno = noPreset; //maj du numéro de preset
+                        }
+                    }
+                }
+                Debug.Log(" nom : " + namePreset + " no " + noPreset);
+            }
+
+            //pour la pop initial de sph------------------------
             if (message.address == "/osc/notify/presets/hajji" && anothertime == false)
             {
-                presetnumber = (int)valeur;
-                Debug.Log(msg + " => Nombre : " + valeur);
+                presetnumber = (int)message.values[0];
+                Debug.Log(msg + " => Nombre : " + presetnumber);
                 //Je créé le nombre de sphère requis : 
                 //population initial composé de presetnumber chromosomes qui sont composé de nwidget gênes
                 for (int i = 1; i <= presetnumber; i++)
@@ -199,28 +236,34 @@ namespace uOSC
                         // float angleIteration = 360 / presetnumber;
                         // float currentRotation = angleIteration * i;
                         SphereMusicClone = Instantiate(SphereMusic) as GameObject;
-                        float rx = (Random.Range(0, 2) < 1) ? Random.Range(-0.6f, -0.3f) : Random.Range(0.3f, 0.6f);
-                        float ry = (Random.Range(0, 2) < 1) ? Random.Range(-0.6f, -0.3f) : Random.Range(0.3f, 0.6f);
+                        SphereMusicClone.transform.SetParent(container.transform, true);
+                        float rx = (Random.Range(0, 2) < 1) ? Random.Range(-0.7f, -0.25f) : Random.Range(0.25f, 0.7f);
+                        float ry = (Random.Range(0, 2) < 1) ? Random.Range(-0.7f, -0.25f) : Random.Range(0.25f, 0.7f);
                         SphereMusicClone.transform.position = new Vector3(this.transform.position.x + rx, this.transform.position.y + ry, this.transform.position.z + Random.Range(-0.3f, 1f));
                         // SphereMusicClone.transform.rotation = this.transform.rotation;
                         // SphereMusicClone.transform.Rotate(new Vector3(0, currentRotation, 0));
-                        SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 3f));
+                        SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 4f));
                         SphereMusicClone.GetComponentInChildren<Renderer>().material.color = changeAlpha(mycolors.Pop(), 0.3f); //9 preset max
                         SphereMusicClone.name = objectName;
                         scriptvaleur = SphereMusicClone.GetComponent<InfoSphere>();
                         scriptvaleur.presetno = i;
                         allsphere.Add(SphereMusicClone);
-
+                        if (i == presetnumber)
+                        {
+                            popini = allsphere.Count;
+                            childpresetno = popini + 1; //+1 car silence pas compté dans popini
+                            EtapeJson = true;//pour lancer le processus Json qui initialise les values widget
+                        }
                     }
                 }
-                popini = allsphere.Count;
-                childpresetno = popini + 1; //+1 car silence pas compté dans popini
                 anothertime = true;
             }
 
-            //après bundle que j'ai send avec /osc/widget,i-----------------------------------
-            if (message.address == "/osc/widget") //value[0] = index of widget and value[1] = JSON String
+            //pour l'initialisation des widget de chaque sphere-----------------------------------
+            if (message.address == "/osc/widget")
             {
+                //après bundle que j'ai send avec /osc/widget,i
+                //value[0] = index of widget and value[1] = JSON String
                 var jsonstring = (string)message.values[1];
                 Rootobject json = JsonConvert.DeserializeObject<Rootobject>(jsonstring);
                 if (json != null && json.label != "Trigger" && json.concreteEventID != 0)
@@ -235,7 +278,7 @@ namespace uOSC
                         //Debug.Log("json " + IdValue.x + " nom : " + json.label);
                     }
                 }
-                ok2 = true;
+                EtapePreset = true; //tout est initialisé, passons à l'étape Preset maintenant
             }
 
             //ENCODAGE GENETIC----------------------------------------------------------
@@ -263,6 +306,7 @@ namespace uOSC
                             if (presetNoCorrect == (popini + 1) && i == blobpreset.Length - 16) //donc on a parcouru tout les widget du dernier preset
                             {
                                 widgetDone = true; //on arrete les modif, on a tout ce qui nous faut
+                                EtapeName = true; //je passe à l'étape name
                                 var client = GetComponent<uOscClient>();
                                 client.Send("/preset", silence);
                             }
@@ -291,28 +335,24 @@ namespace uOSC
         void FixedUpdate()
         {
             //Initialisation widget de chaque sphere------------------
-            if (ok == true && nbwidg != 0)
+            if (EtapeJson == true && nbwidg != 0)
             {
                 JsonEachWidget(); //récup les eventID et initialise à max all widget
-                ok = false;
+                EtapeJson = false;
             }
-            if (ok2 == true)
+            //Déclenchement de Blob-----------------------------------
+            if (EtapePreset == true)
             {
-                //Déclenchement de Blob-----------------------------------------------
                 //je traite ainsi tout mes blob de chaque preset dès le début mais la méthode reste indésiré
                 StartCoroutine(WaitPleaseSendBlob(0.2f)); //car blob trop lent à arriver donc 0.2 sec pour prendre en compte tout les blob
-                //Déclenchement de Blob Propre-----------------------------------------------
-                //méthode propre mais non fonctionnel sur kyma (retard sur la création de blob)
-                //var bundlePreset = new Bundle(Timestamp.Now);
-                //for (int i = 1; i < 9; i++) 
-                //{
-                //    if (i != silence) //preset silence degagé
-                //    {
-                //        bundlePreset.Add(new Message("/preset", i));
-                //    }
-                //}
-                //client.Send(bundlePreset);
-                ok2 = false;
+                EtapePreset = false;
+            }
+
+            //Modification des noms des presets------------------------
+            if (EtapeName == true)
+            {
+                StartCoroutine(GiveMeIndexName(0f)); //besoin des noms pour la génétique par après (car mauvaise position des child dans index)
+                EtapeName = false;
             }
 
             //Stars Rating Affichage-------------------------------------
@@ -436,7 +476,6 @@ namespace uOSC
             else
                 goGenetic = false;
             //Si je clique sur DNA => Algo Genetic :
-
             //if (GameObject.Find("dna").GetComponent<ActiveGenetic>().act == true && goGenetic)
             if (Input.GetKeyDown(KeyCode.S))
             {
@@ -449,7 +488,7 @@ namespace uOSC
                     {
                         //je verifie que la pop initiale n'a pas été liquidié totalement avec un seuil de survie de 1/2
                         //et je dégage les spheres qui ont moins de 3 étoiles
-                        if (allsphere.Count > ((popini / 2)) && GameObject.Find("SpherePreset_" + i).GetComponent<InfoSphere>().nstar <= 2)
+                        if (allsphere.Count > ((popini / 2) + 1) && GameObject.Find("SpherePreset_" + i).GetComponent<InfoSphere>().nstar <= 2)
                         {
                             allsphere.Remove(GameObject.Find("SpherePreset_" + i));
                             DestroyImmediate(GameObject.Find("SpherePreset_" + i));
@@ -458,13 +497,9 @@ namespace uOSC
                     }
                 }
 
-                //Selection Mating + Mating + Mutation------------------------------
+                //Selection Mating + Mating + Mutation : au hasard sur les keep-------------------
                 justparent = popini - nokeep; //reproduction qu'entre parents
-                StartCoroutine(MatingSaveChild(0.2f)); //Coroutine car kyma trop lent a comprendre les mess....
-
-
-                var client = GetComponent<uOscClient>();
-                client.Send("/preset", silence);
+                StartCoroutine(MatingPlease(1f));//Coroutine car kyma trop lent a comprendre les mess....
                 //goGenetic = false;
                 //GameObject.Find("DNA").GetComponent<ActiveGenetic>().act = false;
             }
@@ -482,12 +517,13 @@ namespace uOSC
         //***************************************************************************************************************************//
 
         //------------------------------------
-        // Méthodes utilitaires :
+        // Méthodes/Coroutines utilitaires :
         //------------------------------------
 
         //***************************************************************************************************************************//
-        IEnumerator ChangeMusic()  //Une co-routine renvoie toujours un type spécial : IEnumarator
+        IEnumerator ChangeMusic()  //s'occupe du changement de music via kyma
         {
+
             if (n != m)
             {
                 var client = GetComponent<uOscClient>();
@@ -499,7 +535,14 @@ namespace uOSC
         }
 
         //***************************************************************************************************************************//
-        IEnumerator FadeTo(Collider coli, float aValue, float aTime)
+        Color changeAlpha(Color color, float newAlpha) //s'occupe de la transparance des spheres non visés (visuel plus sympa)
+        {
+            color.a = newAlpha;
+            return color;
+        }
+
+        //***************************************************************************************************************************//
+        IEnumerator FadeTo(Collider coli, float aValue, float aTime) //s'occupe de la transparance des spheres de façon graduel
         {
             float alpha = coli.GetComponentInChildren<Renderer>().material.color.a;
             for (float t = 0.0f; t < 1f; t += Time.deltaTime / aTime)
@@ -512,15 +555,21 @@ namespace uOSC
         }
 
         //***************************************************************************************************************************//
-        Color changeAlpha(Color color, float newAlpha)
+        IEnumerator GiveMeIndexName(float t) //s'occupe de demander les index/name à kyma
         {
-            color.a = newAlpha;
-            return color;
+            var client = GetComponent<uOscClient>();
+            for (int i = 1; i <= presetnumber; ++i)
+            {
+                client.Send("/osc/preset", i - 1);
+                yield return new WaitForSeconds(t);
+            }
         }
 
         //***************************************************************************************************************************//
-        void JsonEachWidget()
+        void JsonEachWidget() //s'occupe de demander les eventID de chaque widget pour les mettre dans chaque sphere
         {
+            Debug.Log("JsonEachWidget");
+
             var client = GetComponent<uOscClient>();
             var bundleWidget = new Bundle(Timestamp.Now);
 
@@ -554,9 +603,11 @@ namespace uOSC
                 }
             }
         }
+
         //***************************************************************************************************************************//
-        void CorrectValue(int eventID, float valueWidget, int x)
+        void CorrectValue(int eventID, float valueWidget, int x) //corrige les valeurs des widgets de chaque preset grâce à info du blob (call à l'étape Preset, apres json)
         {
+
             if (x >= silence + 1) //pour le preset silence éviter dans une autre boucle, creer probleme ici
             {
                 x = x - 2;
@@ -577,10 +628,11 @@ namespace uOSC
             }
 
         }
+
         //***************************************************************************************************************************//
-        IEnumerator MatingSaveChild(float t)
+        IEnumerator MatingPlease(float t) //s'occupe du mating pour obtenir les enfants
         {
-            while (popini != allsphere.Count)
+            while (allsphere.Count != popini)
             {
                 int male = Random.Range(0, justparent); // dernier element non compris vu que 0 start
                 int female = Random.Range(0, justparent);
@@ -595,23 +647,25 @@ namespace uOSC
                     if (i != silence && !GameObject.Find("SpherePreset_" + i)) //preset silence degagé + vérifie si aucun même nom existe
                     {
                         childName = "SpherePreset_" + i;//rempli les trou de i sphere 
-                        childpresetno++;
+                        //childpresetno++;
                         break;
                     }
                 }
-
                 SphereMusicClone = Instantiate(SphereMusic) as GameObject;
-                SphereMusicClone.transform.position = new Vector3(this.transform.position.x + Random.Range(-1f, 1f), this.transform.position.y + Random.Range(-1f, 1f), this.transform.position.z + Random.Range(-0.3f, 1f));
-                SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 3f));
+                SphereMusicClone.transform.SetParent(container.transform, true);
+                float rx = (Random.Range(0, 2) < 1) ? Random.Range(-0.7f, -0.25f) : Random.Range(0.25f, 0.7f);
+                float ry = (Random.Range(0, 2) < 1) ? Random.Range(-0.7f, -0.25f) : Random.Range(0.25f, 0.7f);
+                SphereMusicClone.transform.position = new Vector3(this.transform.position.x + rx, this.transform.position.y + ry, this.transform.position.z + Random.Range(-0.3f, 1f));
+                SphereMusicClone.transform.Translate(new Vector3(0, 0.3f, 4f));
                 Color mergeColor = (parent1.GetComponentInChildren<Renderer>().material.color + parent2.GetComponentInChildren<Renderer>().material.color) / 2;
                 SphereMusicClone.GetComponentInChildren<Renderer>().material.color = changeAlpha(mergeColor, 0.3f); //9 preset max
                 SphereMusicClone.name = childName;
                 InfoSphere scriptvaleur = SphereMusicClone.GetComponent<InfoSphere>();
-                scriptvaleur.presetno = childpresetno;
+                scriptvaleur.presetno = 0; //childpresetno;
                 allsphere.Add(SphereMusicClone); //pas dans le bon ordre vu qu'on ajoute en dernier dans la liste (contenant deja les anciens) => Attention !!
-
+                presetnumber = presetnumber + 1; //car indexation a changé par l'ajout d'enfant et la non suppression des anciens sur kyma
                 //faire random avant... parent1 et 2-----------------
-                int crossing = Random.Range(1, 2);
+                int crossing = Random.Range(1, 3);
                 //si crossing = 1, alors crossing normal
                 GameObject p1 = parent1;
                 GameObject p2 = parent2;
@@ -638,11 +692,13 @@ namespace uOSC
                 //Création du preset enfant sur kyma--------------------------------------
                 //on se place sur un preset parent pour save
                 var client = GetComponent<uOscClient>();
-                //client.Send("/preset", 8); //car kyma commence par preset 1 // PROBLEME ?????????????????? VU LA POSITION DU PRESET
-
                 var bundle1 = new Bundle(Timestamp.Now);
+                //Mutation non appliqué car risque de modifié un widget Level / Vol ... Dommage.
+                //Mutation d'un gène au hasard sur mes enfants (peut optimiser la convergence de preset)
+                //int geneMutation = Random.Range(0, scriptvaleur.widgetValue.Count); 
                 foreach (var item in scriptvaleur.widgetValue)
                 {
+
                     int eventKyma = (int)item.x;
                     float valueKyma = item.y;
                     bundle1.Add(new Message("/vcs", eventKyma, valueKyma));
@@ -652,31 +708,33 @@ namespace uOSC
                 Debug.Log("sauvegarde...");
                 client.Send("/preset", 130); //creation d'un new preset
 
-                //Mutations Elitisme : sur les 3 etoiles(une chance sur 2) si existe-------------------
-                //mutation...
-                //Pour cela, utilisation de générateur Random paire(X, X) ligne colonne parmis les chromosomes 3 etoiles
-
+                premiereGene = false;
+                StartCoroutine(GiveMeIndexName(0f));
                 yield return new WaitForSeconds(t);
             }
         }
 
     }
-
-    // GENETIC ALGORITHME :
-    //------------------------ 
-    /* RMQ : attention le nombre aléatoire seed si ça ne reutilise pas le meme nbr chaque fois...
-     * Faudrait verifier si on sait le nombre de widget d'un preset... pour généraliser
-     * 
-    1) fonction cout = stars  et  variables = widget  et  il y a nwidget = nombre de gênes
-       Donc plus il y a d'étoiles, plus le cout est faible et donc le preset est bien !
-       => Encodage des variables devrait être fait par rapport au pourcentage du slider donc variable/maxVar pour chaque widget !!! ... Decodage sens inverse puis save sur kyma
-    2) population initial composé de presetnumber chromosomes qui sont composé de nwidget gênes // VOIR MESSAGE OSC POUR RECEVOIR LES VARIABLES ET EN FAIRE DES CHROMOSOMES
-    3) Selection naturelle : Seuillage/Tresholding pour degager ceux en dessous de 3 etoiles tout en faisant attention à pas liquidier la totalité de la population
-    4) Selection Mating : au hasard sur les keep 
-    5) Mating : retour à pop initiale avec 2 parents qui donne deux enfants 
-       donc selection d'un kinetochore sur notre chromosome encodé (ex : 0.7,0.8,0.3 // 0.1,1,0.5,0.8) où // est le kinetochore ou point de croisement 
-    6) Mutations Elitisme : sur les 3 etoiles (une chance sur 2) si il y en a ! Pour cela, utilisation de générateur Random paire ( X, X) ligne colonne parmis les chromosomes 3 etoiles
-       Rmq : pas de mutation sur iteration final... donc attention car c'est le gars qui itere => A voir
-    7) FIN : Convergence en fonction du besoin et des gouts de l'utilisateur
-    */
 }
+
+//***************************************************************************************************************************//
+//***************************************************************************************************************************//
+//***************************************************************************************************************************//
+
+// GENETIC ALGORITHME :
+//------------------------ 
+/* RMQ : attention le nombre aléatoire seed si ça ne reutilise pas le meme nbr chaque fois...
+ * Faudrait verifier si on sait le nombre de widget d'un preset... pour généraliser
+ * 
+1) fonction cout = stars  et  variables = widget  et  il y a nwidget = nombre de gênes
+   Donc plus il y a d'étoiles, plus le cout est faible et donc le preset est bien !
+   => Encodage des variables devrait être fait par rapport au pourcentage du slider donc variable/maxVar pour chaque widget !!! ... Decodage sens inverse puis save sur kyma
+2) population initial composé de presetnumber chromosomes qui sont composé de nwidget gênes // VOIR MESSAGE OSC POUR RECEVOIR LES VARIABLES ET EN FAIRE DES CHROMOSOMES
+3) Selection naturelle : Seuillage/Tresholding pour degager ceux en dessous de 3 etoiles tout en faisant attention à pas liquidier la totalité de la population
+4) Selection Mating : au hasard sur les keep 
+5) Mating : retour à pop initiale avec 2 parents qui donne deux enfants 
+   donc selection d'un kinetochore sur notre chromosome encodé (ex : 0.7,0.8,0.3 // 0.1,1,0.5,0.8) où // est le kinetochore ou point de croisement 
+6) Mutations Elitisme : sur les 3 etoiles (une chance sur 2) si il y en a ! Pour cela, utilisation de générateur Random paire ( X, X) ligne colonne parmis les chromosomes 3 etoiles
+   Rmq : pas de mutation sur iteration final... donc attention car c'est le gars qui itere => A voir
+7) FIN : Convergence en fonction du besoin et des gouts de l'utilisateur
+*/
