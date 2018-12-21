@@ -23,6 +23,7 @@ namespace uOSC
         public int silence = 1;
         public GameObject SphereMusic;
         private GameObject SphereMusicClone;
+        public Text txt;
         bool onerequest = false;
         bool goGenetic = false;
         bool anothertime = false;
@@ -32,7 +33,6 @@ namespace uOSC
         private bool EtapePreset = false;
         private bool widgetDone = false;
         private bool EtapeName = false;
-        private bool indexDico = false;
         private bool premiereGene = true;
         public InfoSphere scriptvaleur;
         private int justparent;
@@ -55,7 +55,7 @@ namespace uOSC
         List<GameObject> allsphere;
         private int popini;
         private string childName;
-        private int childpresetno;
+        //private int childpresetno;
         private int nokeep;
 
         private int nbwidg;
@@ -198,23 +198,20 @@ namespace uOSC
                             child.gameObject.GetComponent<InfoSphere>().presetName = namePreset;
                         }
                     }
-                }
-                else
-                {
+                }else{
                     foreach (Transform child in container.transform)
                     {
-                        if (child.gameObject.GetComponent<InfoSphere>().presetno == 0 && !indexName.ContainsKey(namePreset) && child.gameObject.GetComponent<InfoSphere>().presetName == "")
+
+                        if(!indexName.ContainsKey(namePreset) && child.gameObject.GetComponent<InfoSphere>().presetno == 0 )
                         {
-                            Debug.Log("ICI CHILD");
                             indexName.Add(namePreset, noPreset);
+                            Debug.Log("Add : " + namePreset + " " + noPreset + " DicoCount : " + indexName.Count);
                             child.gameObject.GetComponent<InfoSphere>().presetno = noPreset;
                             child.gameObject.GetComponent<InfoSphere>().presetName = namePreset;
                         }
-                        else if (child.gameObject.GetComponent<InfoSphere>().presetName == namePreset) //+1 car presetno commence à 1
+                        else if(child.gameObject.GetComponent<InfoSphere>().presetName == namePreset) 
                         {
-                            Debug.Log("zzzzICI CHILD");
-
-                            child.gameObject.GetComponent<InfoSphere>().presetno = noPreset; //maj du numéro de preset
+                             child.gameObject.GetComponent<InfoSphere>().presetno = noPreset; //maj du numéro de preset
                         }
                     }
                 }
@@ -251,7 +248,7 @@ namespace uOSC
                         if (i == presetnumber)
                         {
                             popini = allsphere.Count;
-                            childpresetno = popini + 1; //+1 car silence pas compté dans popini
+                            //childpresetno = popini + 1; //+1 car silence pas compté dans popini
                             EtapeJson = true;//pour lancer le processus Json qui initialise les values widget
                         }
                     }
@@ -431,6 +428,7 @@ namespace uOSC
 
                 //Music + Alpha-------------------------------------------------------------------------------------------
                 n = hit.collider.GetComponent<InfoSphere>().presetno;
+                txt.text = hit.collider.GetComponent<InfoSphere>().presetName;
                 if (w != 0 && n != m)
                 {
                     StartCoroutine(ChangeMusic());
@@ -457,6 +455,7 @@ namespace uOSC
                 star = 0;
                 lecanvas.GetComponent<CanvasGroup>().alpha = 0f;
                 n = silence; // celui de mon ''Preset Silence''
+                txt.text = "Look a sphere...";
                 StartCoroutine(ChangeMusic());
                 if (onerequest == true)
                 {
@@ -476,8 +475,8 @@ namespace uOSC
             else
                 goGenetic = false;
             //Si je clique sur DNA => Algo Genetic :
-            //if (GameObject.Find("dna").GetComponent<ActiveGenetic>().act == true && goGenetic)
-            if (Input.GetKeyDown(KeyCode.S))
+            if (GameObject.Find("dna").GetComponent<ActiveGenetic>().act == true && goGenetic)
+            //if (Input.GetKeyDown(KeyCode.S))
             {
 
                 //Selection naturelle : Seuillage/Tresholding-------------------
@@ -500,8 +499,8 @@ namespace uOSC
                 //Selection Mating + Mating + Mutation : au hasard sur les keep-------------------
                 justparent = popini - nokeep; //reproduction qu'entre parents
                 StartCoroutine(MatingPlease(1f));//Coroutine car kyma trop lent a comprendre les mess....
-                //goGenetic = false;
-                //GameObject.Find("DNA").GetComponent<ActiveGenetic>().act = false;
+                goGenetic = false;
+                GameObject.Find("dna").GetComponent<ActiveGenetic>().act = false;
             }
 
         }
@@ -705,15 +704,33 @@ namespace uOSC
                     //Debug.Log("vcs child : " + eventKyma + " et value " + valueKyma);
                 }
                 client.Send(bundle1);
-                Debug.Log("sauvegarde...");
-                client.Send("/preset", 130); //creation d'un new preset
-
-                premiereGene = false;
-                StartCoroutine(GiveMeIndexName(0f));
+                StartCoroutine(savePlease(0.5f));
                 yield return new WaitForSeconds(t);
             }
         }
-
+        //A cause du décalage de Kyma----
+        IEnumerator savePlease(float t)
+        {
+            yield return new WaitForSeconds(t);
+            var client = GetComponent<uOscClient>();
+            Debug.Log("sauvegarde...");
+            client.Send("/preset", 130); //creation d'un new preset
+            premiereGene = false;
+            StartCoroutine(GiveMeIndexName(0f));
+            if (allsphere.Count == popini)
+            {
+                StartCoroutine(ReturnSilence(0.2f));
+            }
+        }
+        //Sinon trop d'OSC pour Kyma---
+        IEnumerator ReturnSilence(float t)
+        {
+            yield return new WaitForSeconds(t);
+            var client = GetComponent<uOscClient>();
+            Debug.Log("sauvegarde...");
+            client.Send("/preset", silence); //creation d'un new preset
+            
+        }
     }
 }
 

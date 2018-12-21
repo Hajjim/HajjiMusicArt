@@ -1,6 +1,6 @@
 Metro
 PlayerPath?
-C:/Users/Hajji/Desktop/nouv20du12
+C:/Users/Hajji/Desktop/ProjCombV1_HajjiMusicArt
 SceneListBegin?
 Assets/Scenes/Main.unity
 SceneListEnd?
@@ -210,7 +210,7 @@ c4fd2ef7468c68e11d03e50c6e8b323d Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.A
 a791e7387cb4113e3b29c2bbd8199b96 Assembly-CSharp.dll:HoloToolkit.Unity.UX.DistorterGravity
 af1b899928fa73a7824f1b26518097f6 Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.MeshButton
 44f24521fcafda017d17ab4dbb73c0cc Assembly-CSharp.dll:HoloToolkit.UX.ToolTips.ToolTipConnector
-0b1d6604b00e7cf696aec90e84a92616 Assembly-CSharp.dll:uOSC.SphereManager
+954a33db50bf12ef4a1c282f241fbc3a Assembly-CSharp.dll:uOSC.SphereManager
 8186a0148b55fd4b5cdaa99b9937cf7d Assembly-CSharp.dll:HoloToolkit.Unity.Buttons.ButtonMeshProfile
 05524b8f659e7bfe5756d1335fec24ba Assembly-CSharp.dll:HoloToolkit.Unity.SpatialMapping.SpatialMappingSource
 bffc879e328df7088b4672067d06833b Assembly-CSharp.dll:HoloToolkit.Unity.UX.LineParticles
@@ -310,7 +310,7 @@ d62a422b2910567513bd772ce37cf94e Assembly-CSharp.dll:HoloToolkit.Unity.AudioEven
 3dcfd84d20deaace85b9ca45b0051c46 Assembly-CSharp.dll:HoloToolkit.UX.Dialog.DialogShell
 edd06c164d6a92966b90a7763ab8511a Assembly-CSharp.dll:HoloToolkit.Unity.SolverBodyLock
 de58daf7a7585c93b4a043e238d5431c Assembly-CSharp.dll:HoloToolkit.Unity.UX.Spline
-3ffb5ae37e02c32e6f0a1fd9002f5b00 Assembly-CSharp.dll:.InfoSphere
+83d1002681b3d65574793d53615cf837 Assembly-CSharp.dll:.InfoSphere
 960588de1ff099aa2d1b4ff55adb229b Assembly-CSharp.dll:HoloToolkit.Unity.InputModule.TriggerButton
 7000360c28a9dd6e5169290e63863ba5 Assembly-CSharp.dll:HoloToolkit.Unity.Receivers.ToggleActiveReceiver
 b33db881aedddc764e35560d6e13fac5 Assembly-CSharp.dll:HoloToolkit.UX.Buttons.DialogButton
